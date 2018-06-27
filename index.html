@@ -1,0 +1,434 @@
+<html>
+    <head>
+        <title>D3 Project</title>
+        <script src="d3.js"></script>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="https://d3js.org/d3-queue.v3.min.js"></script>
+        <script src="https://d3js.org/d3-geo-projection.v1.min.js"></script>
+        <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+        <script src="https://d3js.org/topojson.v2.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.13.0/d3-legend.js"></script>
+		<script src="d3-tip.js"></script>
+        <style>
+            rect {
+                stroke: #E6E6E6;
+                stroke-width: 1.5px;
+            }
+
+            .axis text {
+                font-size: 9pt;
+                font-family: Consolas, courier;
+                fill: #000;
+            }
+
+            .axis path,
+            .axis line {
+                fill: none;
+                stroke: none;
+            }
+
+            .d3-tip {
+                line-height: 1;
+                font: 14px sans-serif;
+                padding: 12px;
+                background: rgba(0, 0, 0, 0.8);
+                color: rgb(185, 185, 185);
+                border-radius: 2px;
+            }
+
+            /* Creates a small triangle extender for the tooltip */
+            .d3-tip:after {
+                box-sizing: border-box;
+                display: inline;
+                font-size: 10px;
+                width: 100%;
+                line-height: 1;
+                color: rgba(0, 0, 0, 0.8);
+                content: "\25BC";
+                position: absolute;
+                text-align: center;
+            }
+
+            /* Style northward tooltips differently */
+            .d3-tip.n:after {
+                margin: -1px 0 0 0;
+                top: 100%;
+                left: 0;
+				
+			
+            }
+			.boxed {
+				border: 0.5px solid black ;
+				width : 950px;
+			}
+
+        </style>
+    </head>
+    <body>
+        <h1 align="center"> Yelp Business Data </h1>
+        <h2 align="center"> X-axis: Quarters, Y-axis: Ratings</h2>
+		<br/>
+		
+        <svg id="chart1">             
+        </svg><svg id = "Legend"></svg><div class="boxed"></div>
+		<svg id="chart2">               
+        </svg><svg id = "ratinglegend"></svg><div class="boxed"></div>
+		<svg id="chart3">
+               
+        </svg><div class="boxed"></div>
+		<svg id="chart4">
+               
+        </svg><div class="boxed"></div>
+		<svg id="chart5">
+               
+        </svg><div class="boxed"></div>
+		<svg id="chart6">
+               
+        </svg><div class="boxed"></div>
+		<svg id="chart7">
+               
+        </svg><div class="boxed"></div>
+		<svg id="chart8">
+               
+        </svg><div class="boxed"></div>
+		<svg id="chart9">
+               
+        </svg><div class="boxed"></div>
+		<svg id="chart10">
+               
+        </svg><div class="boxed"></div>
+		<svg id="chart11">
+               
+        </svg>
+    </body>
+    </body>
+    <script type="text/javascript">
+
+        const WIDTH =950
+        const HEIGHT = 200
+        const MARGIN = {
+                left: 80,
+                top: 10,
+                bottom: 5,
+                right: 20
+            }
+
+        const CHART_HEIGHT = HEIGHT - MARGIN.top - MARGIN.bottom
+        const CHART_WIDTH = WIDTH - MARGIN.left - MARGIN.right
+
+        function scatterplot(data) {
+            var parseTime = d3.timeParse("%Y-%m-%d");
+            var parseFormat = d3.timeFormat("%Y-%m-%d");
+			
+            var cat_data = []
+            data.forEach(function(cat) {
+                    cat.quarters.forEach(function(catYear) {
+                        cat_data.push({
+                            category: cat.category,
+                            bus_name: cat.business_name,
+                            quarter: parseTime(catYear.quarter),
+                            rating: +catYear.rating,
+                            count: +catYear.count
+                        });
+                    });
+            });
+
+            //console.log(cat_data)
+			
+			categories = ["American (Traditional)","Chinese","French","Greek","Indian","Italian","Japanese","Mediterranean","Mexican","Thai","Vietnamese"]
+			containerId = ["#chart1","#chart2","#chart3","#chart4","#chart5","#chart6","#chart7","#chart8","#chart9","#chart10","#chart11"]
+			
+			//onsole.log(categories.length)
+			
+			var color = d3.scaleOrdinal(d3.schemeCategory10)
+			
+			var legend = d3.legendColor()
+				//.title("Category")
+                .shape("rect")
+				//.shapeWidth(30)
+				.scale(color);
+			
+			var ratinglegend = d3.legendSize()
+				
+					
+			var colorNew = d3.scaleOrdinal(d3.schemeSet1)
+			
+			var colorNew1 = d3.scaleOrdinal(d3.schemeDark2)
+			
+			for (i=0;i<categories.length;i++){
+
+				dataFiltered = cat_data.filter(function (d) { return d.category === categories[i]})
+
+                //console.log(dataFiltered.length)
+
+                //dataFiltered = dataFiltered.filter(function(d) {return d.count > 15})
+
+                //console.log(dataFiltered.length)
+
+                dataFiltered.sort(function(x, y){
+                        return d3.ascending(x.quarter, y.quarter);
+                })
+				
+				
+
+				let maxi = d3.max(dataFiltered, d => d.rating);
+				//console.log(maxi)
+				let meanDonated = d3.mean(dataFiltered, d => d.rating);
+				let minDonated = d3.min(dataFiltered, d => d.rating);
+				let colorScale = d3.scaleLinear()
+					.range(["#fecc5c", "#fd8d3c" ,"blue"])
+					.domain([minDonated, meanDonated, maxi])
+                    formatDecimalComma = d3.format(",.5f")
+				
+				// console.log(dataFiltered)
+				
+				//var color = d3.scaleOrdinal(d3.schemeCategory20);
+				
+				
+				var scaleX = d3.scaleTime()
+								.range([0, CHART_WIDTH])
+								.domain(d3.extent(dataFiltered, d => d.quarter))
+
+				var scaleY = d3.scaleLinear()
+								.range([CHART_HEIGHT, 0])
+								//.domain([0, 5.0])
+								.domain(d3.extent(dataFiltered, d => d.rating))
+
+				//console.log(d3.extent(cat_data, d => d.quarter));
+
+                // console.log(d3.extent(dataFiltered, d => formatDecimalComma(parseFloat(d.rating / d.count))))
+                // console.log(dataFiltered.map(d => formatDecimalComma(parseFloat(d.rating / d.count))))
+
+				let container = d3.select(containerId[i]);
+
+				container.append("g")
+						.attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
+
+                var tip = d3.tip()
+                .attr('class', 'd3-tip')
+                .offset([-10, 0])
+                .html(function(d) {
+                  return  "<div><span>Business Name:</span> <span style='color:white'>" + d.bus_name + "</span></div>" + 
+                          "<div><span>Category:</span> <span style='color:white'>" + d.category + "</span></div>" + 
+                          "<div><span>Quarter:</span> <span style='color:white'>" + parseFormat(d.quarter) + "</span></div>" + 
+                          "<div><span>Rating:</span> <span style='color:white'>" + d.rating + "</span></div>" +
+						  "<div><span>Count:</span> <span style='color:white'>" + d.count + "</span></div>";
+                })
+
+                container.call(tip);
+
+				
+				container.selectAll("circle")
+					.data(dataFiltered)
+					.enter()
+					.append("circle")
+					.attr("r",d => 
+								(d.rating >4 && d.count < 10) ?
+								3.5: 1.8)
+					.attr("cx", d => scaleX(d.quarter))
+					.attr("cy", d => scaleY(d.rating))
+					.attr("transform", `translate(${MARGIN.left+5}, ${MARGIN.top})`)
+                    .attr("stroke-width", 1)
+                    //.attr("opacity", 0.6)
+					.attr("fill", d => d.color = color(d.category))
+					//.attr("fill", d => 
+					//			(d.rating >4 && d.count < 10) ?
+					//			"black": color(d.category))
+                    .on("mouseover", function(d, i) {
+                                        tip.show(d, i);
+                                        d3.select(this)
+                                            .style("stroke-width", 2)
+                                            .style("stroke", "red");
+                                })
+                    .on("mouseout", function(d, i) {
+                                        tip.hide(d, i);
+                                        d3.select(this)
+                                            .style("stroke-width", 1)
+                                            .style("stroke", "");
+                                });
+								
+								
+				chinaBus = ["SUSHISAMBA - Las Vegas","Hakkasan Nightclub"]
+				//mexBus = ["Tacos El Gordo","Border Grill"]
+				americaBus = ["Egg Works","Hooters Casino Hotel"]
+				//italianBus = ["Capo's Italian Cuisine","Carnevino"]
+				//indian = ["Mint Indian Bistro","Mount Everest India's Cuisine"]
+				//thai = ["Lotus of Siam"]
+               
+                if (categories[i] == "Chinese") {
+					
+					for (j=0 ; j<chinaBus.length;j++){
+					businessData = dataFiltered.filter(function(d) {return d.bus_name === chinaBus[j]})
+                    businessData.sort(function(x, y){
+                         return d3.ascending(x.quarter, y.quarter);
+                     })
+                    //console.log(businessData)
+                    var valueline = d3.line()
+                                        .x(function(d) {return scaleX(d.quarter)})
+                                        .y(function(d) {return scaleY(d.rating)})
+										
+
+
+                    container.append("path")
+                            .attr("class", "line")
+                            .datum(businessData)
+                            .attr("d", valueline)
+                            .attr("fill", "none")
+                            .attr("stroke", "orange")
+                            // .attr("stroke-linejoin", "round")
+                            // .attr("stroke-linecap", "round")
+							//.style("stroke", function() { // Add dynamically
+							//		return colorNew(chinaBus[j]); })
+							//.style("stroke-dasharray","2,2")
+                            .attr("stroke-width", 1.5)
+                            .attr("transform", `translate(${MARGIN.left+5}, ${MARGIN.top})`)
+                 }
+				 }
+				 else if (categories[i] == "American (Traditional)"){
+				 
+					for (j=0 ; j<americaBus.length;j++){
+					businessData = dataFiltered.filter(function(d) {return d.bus_name === americaBus[j]})
+                    businessData.sort(function(x, y){
+                         return d3.ascending(x.quarter, y.quarter);
+                     })
+                    //console.log(businessData)
+                    var valueline = d3.line()
+                                        .x(function(d) {return scaleX(d.quarter)})
+                                        .y(function(d) {return scaleY(d.rating)})
+										
+
+
+                    container.append("path")
+                            .attr("class", "line")
+                            .datum(businessData)
+                            .attr("d", valueline)
+                            .attr("fill", "none")
+                            .attr("stroke", "blue")
+							//.style("stroke", function() { // Add dynamically
+							//		return colorNew1(italianBus[j]); })
+							//.style("stroke-dasharray","3,3")
+                            // .attr("stroke-linejoin", "round")
+                            // .attr("stroke-linecap", "round")
+                            .attr("stroke-width", 1.5)
+                            .attr("transform", `translate(${MARGIN.left+5}, ${MARGIN.top})`)
+				 }
+				 }
+
+				let yAxis = d3.axisLeft(scaleY);
+				
+				let yaxisgroup = container.append("g")
+									.attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`)
+									.call(yAxis)
+									.append("text")
+										.text("Ratings")
+										.attr("transform",
+											"translate(" + (MARGIN.left - 130) + " ," + 
+											   (MARGIN.top + 70) + ") rotate(-90)")
+										.attr("alignment-baseline", "hanging")
+										.attr("text-anchor", "middle")
+										.attr("font-weight", "bold")
+										.attr("fill", "black")
+										.attr("font-size", 15)
+										
+				
+				
+				//yaxisgroup.call(yAxis);
+
+				let xAxis = d3.axisBottom(scaleX)
+							.tickFormat(d3.timeFormat("%Y-%m-%d"))
+							.ticks(50);
+								
+				if(i == categories.length -1){
+					let xaxisgroup = container.append("g")
+									.attr("transform", `translate(${MARGIN.left+5}, ${HEIGHT - MARGIN.bottom})`)
+									
+					xaxisgroup.call(xAxis).selectAll("text")    
+									.style("text-anchor", "end")
+									.attr("dx", "-.8em")
+									.attr("dy", ".15em")
+									.attr("transform", "rotate(-65)");
+
+                    container.append("text")
+                        .text("Quarters")
+                        .attr("transform",
+                            "translate(" + (CHART_WIDTH/2 +80) + " ," + (CHART_HEIGHT+70) + ")")
+                        .attr("alignment-baseline", "hanging")
+                        .attr("text-anchor", "middle")
+                        .attr("font-weight", "bold")
+						.attr("fill","black")
+                        .attr("font-size", 15)
+
+					}
+								
+				
+
+            }
+			
+			let legendsvg = d3.selectAll("#Legend")
+				.data(dataFiltered)
+                .append("g")  
+                .attr("class", "legend")
+				//.attr("transform",
+                //            "translate(" + (WIDTH - MARGIN.right) + " ," + (CHART_HEIGHT+80) + ")")
+                .call(legend);
+			
+			var legends = d3.selectAll(".legend").selectAll("text").attr("font-size",15)
+		}
+
+        function loadData() {
+                d3.json("Las Vegas Business.json", (err, data) =>{
+                scatterplot(data);
+            })
+        }
+
+        function main() {
+            d3.select("#chart1")
+                .attr("width", WIDTH+30)
+                .attr("height", HEIGHT)
+			d3.select("#chart2")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart3")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart4")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart5")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart6")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart7")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart8")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart9")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart10")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+			d3.select("#chart11")
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT+80)
+			d3.select("#Legend")
+                .attr("width", 200)
+                .attr("height", HEIGHT)
+			d3.select("#ratinglegend")
+                .attr("width", 200)
+                .attr("height", HEIGHT)
+				
+            /*d3.select("#Legend")
+                .attr("height", 100)
+                .attr("width", 180)*/
+            loadData()
+        }
+
+         main()
+
+    </script>
+</html>
